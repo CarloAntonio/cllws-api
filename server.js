@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
+const { MongoEndPoint } = require('./keys/mongoKeys');
+
 const app = express();
 
 app.use(bodyParser.json());
@@ -29,9 +31,7 @@ app.use((error, req, res, next) => {
 
 // connect to mongoose
 mongoose
-  .connect(
-    'mongodb+srv://maximilian:9u4biljMQc4jjqbe@cluster0-ntrwp.mongodb.net/messages?retryWrites=true'
-  )
+  .connect(MongoEndPoint)
   .then(result => {
     app.listen(8080);
   })
