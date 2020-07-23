@@ -10,20 +10,26 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
-  name: {
+  username: {
+    type: String,
+    required: true
+  },
+  firstName: {
     type: String,
     required: false
   },
-  status: {
+  lastName: {
     type: String,
-    default: 'I am new!'
+    required: false
   },
-  posts: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'Post'
-    }
-  ]
+  pic: {
+    type: String,
+    required: false
+  },
+  profile: {
+    type: Schema.Types.ObjectId,
+    ref: 'Profile'
+  }
 });
 
 module.exports = mongoose.model('User', userSchema);

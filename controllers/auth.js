@@ -9,6 +9,7 @@ exports.signup = (req, res, next) => {
   // check validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+      console.log(errors);
       let error = null;
       if(errors.errors[0].msg) {
           error = new Error(errors.errors[0].msg)
@@ -23,8 +24,15 @@ exports.signup = (req, res, next) => {
   }
   
   const email = req.body.email;
-//   const name = req.body.name;
+  const username = req.body.username;
   const password = req.body.password;
+  const confirmPassword = req.body.confirmPassword;
+
+  if(password !== confirmPassword){
+      const error = new Error('Passwords Do Not Match');
+      error.statusCode = 401;
+      throw error;
+  }
 
   bcrypt
     .hash(password, 12)
@@ -32,7 +40,7 @@ exports.signup = (req, res, next) => {
       const user = new User({
         email: email,
         password: hashedPw,
-        // name: name
+        username: username
       });
       return user.save();
     })
@@ -49,6 +57,7 @@ exports.signup = (req, res, next) => {
         res.status(201).json({ 
             message: 'User created!', 
             token: token, 
+            username: username,
             uid: result._id 
         });
     })
@@ -98,13 +107,13 @@ exports.login = (req, res, next) => {
             }
             const token = jwt.sign(
                 {
-                email: loadedUser.email,
-                userId: loadedUser._id.toString()
+                    email: loadedUser.email,
+                    userId: loadedUser._id.toString(),
                 },
                 HashSecret,
                 { expiresIn: '1h' }
             );
-            res.status(200).json({ token: token, uid: loadedUser._id.toString() });
+            res.status(200).json({ token: token, username: loadedUser.username, uid: loadedUser._id.toString() });
         })
         .catch(err => {
             if (!err.statusCode) {
@@ -113,3 +122,29 @@ exports.login = (req, res, next) => {
         next(err);
     });
 };
+
+exports.getUserDetails = (req, res, next) => {
+    User.findById(req.uid)
+        .then(user => {
+            if (!user) {
+                const error = new Error('Could not find user.');
+                error.statusCode = 404;
+                throw error;
+            }
+
+            res.status(200).json({ 
+                uid: user._id.toString(), 
+                email: user.email ? user.email : null,
+                username: user.username ? user.username : null,
+                pic: user.pic ? user.pic : null,
+                firstName: user.firstName ? user.firstName : null,
+                lastName: user.lastName ? user.lastName : null
+            });
+        })
+        .catch(err => {
+            if (!err.statusCode) {
+                err.statusCode = 500;
+            }
+            next(err);
+        });    
+}
