@@ -13,12 +13,7 @@ const router = express.Router();
 
 // routes
 router.get('/getBasicInfo', isAuth, profileController.getBasicInfo);
-router.post('/updateProfilePic', isAuth, profileController.updateProfilePic);
-// router.post('/updateUser', userController.updateUserData);
-// router.post('/checkUsername', userController.checkUsername);
-// router.post('/updateUsername', userController.updateUsername);
-
-// router.post('/getOtherUserData', userController.getOtherUserData);
+router.post('/updateBasicInfo', isAuth, profileController.updateBasicInfo);
 
 // export router
 module.exports = router;

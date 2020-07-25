@@ -2,20 +2,25 @@
 const User = require('../models/user');
 const Profile = require('../models/profile');
 
-const uploadImg = require('../utils/fb');
-
 exports.getBasicInfo = async (req, res, next) => {
     User.findById(req.uid)
         .then(user => {
-            // check is a profile exist for user
-            if(user.profile){
-                return Profile.findById(user.profile.toString())
-            } else {
-                res.status(200).json({ message: "No Associated Profile Found"});
+            if (!user.profile) {
+                const error = new Error('No Associated Profile Found');
+                error.statusCode = 404;
+                throw error;
             }
+
+            return Profile.findById(user.profile.toString())
         })
         .then(profile => {
-            res.status(200).json({ message: "Found It"});
+            return res.status(200).json({
+                hometown: profile.hometown,
+                interest: profile.interest,
+                livesIn: profile.livesIn,
+                quote: profile.quote,
+                worksIn: profile.worksIn,
+            });
         })
         .catch(err => {
             if (!err.statusCode) {
@@ -25,31 +30,22 @@ exports.getBasicInfo = async (req, res, next) => {
         });    
 }
 
-exports.updateProfilePic = async (req, res, next) => {
-    const file = req.file
-
-    let picUrl = null;
-    if (file) {
-        uploadImg(file).then(url => {
-            picUrl = url
-            return User.findById(req.uid)
-        })
-        .then(user => {
-            user.pic = picUrl
-            return user.save()
+exports.updateBasicInfo = async (req, res, next) => {
+    const data = req.body.data;
+    Profile.findOne({ 'user': req.uid })
+        .then(profile => {
+            Object.keys(data).forEach(key => {
+                profile[key] = data[key];
+            })
+            return profile.save()
         })
         .then(result => {
-            console.log(result)
-            res.status(200).send({
-                picUrl: picUrl,
-                status: 'success'
-            });
+            res.status(200).json(result.getPublicFields());
         })
-        .catch((err) => {
+        .catch(err => {
             if (!err.statusCode) {
                 err.statusCode = 500;
             }
             next(err);
-        });
-    }
+        })
 }

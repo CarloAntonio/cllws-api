@@ -1,15 +1,20 @@
+
+// libraries
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// models
 const User = require('../models/user');
+const Profile = require('../models/profile');
+
+// keys
 const { HashSecret } = require('../keys/bcryptKeys');
 
 exports.signup = (req, res, next) => {
   // check validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-      console.log(errors);
       let error = null;
       if(errors.errors[0].msg) {
           error = new Error(errors.errors[0].msg)
@@ -34,10 +39,13 @@ exports.signup = (req, res, next) => {
       throw error;
   }
 
+  let user = null;
+  let token = null;
+
   bcrypt
     .hash(password, 12)
     .then(hashedPw => {
-      const user = new User({
+      user = new User({
         email: email,
         password: hashedPw,
         username: username
@@ -45,7 +53,7 @@ exports.signup = (req, res, next) => {
       return user.save();
     })
     .then(result => {
-        const token = jwt.sign(
+        token = jwt.sign(
             {
               email: result.email,
               userId: result._id
@@ -54,11 +62,20 @@ exports.signup = (req, res, next) => {
             { expiresIn: '1h' }
         );
         
+        const profile = new Profile({
+            user: result._id
+        })
+
+        return profile.save();
+    })
+    .then(profile => {
+        user.profile = profile._id
+        return user.save()
+    })
+    .then(result => {
         res.status(201).json({ 
             message: 'User created!', 
-            token: token, 
-            username: username,
-            uid: result._id 
+            token: token
         });
     })
     .catch(err => {
@@ -113,7 +130,9 @@ exports.login = (req, res, next) => {
                 HashSecret,
                 { expiresIn: '1h' }
             );
-            res.status(200).json({ token: token, username: loadedUser.username, uid: loadedUser._id.toString() });
+            res.status(200).json({ 
+                token: token,
+            });
         })
         .catch(err => {
             if (!err.statusCode) {
@@ -122,29 +141,3 @@ exports.login = (req, res, next) => {
         next(err);
     });
 };
-
-exports.getUserDetails = (req, res, next) => {
-    User.findById(req.uid)
-        .then(user => {
-            if (!user) {
-                const error = new Error('Could not find user.');
-                error.statusCode = 404;
-                throw error;
-            }
-
-            res.status(200).json({ 
-                uid: user._id.toString(), 
-                email: user.email ? user.email : null,
-                username: user.username ? user.username : null,
-                pic: user.pic ? user.pic : null,
-                firstName: user.firstName ? user.firstName : null,
-                lastName: user.lastName ? user.lastName : null
-            });
-        })
-        .catch(err => {
-            if (!err.statusCode) {
-                err.statusCode = 500;
-            }
-            next(err);
-        });    
-}

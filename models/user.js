@@ -26,10 +26,26 @@ const userSchema = new Schema({
     type: String,
     required: false
   },
+  onBoarded: {
+    type: Boolean,
+    require: true,
+    default: false
+  },
   profile: {
     type: Schema.Types.ObjectId,
     ref: 'Profile'
   }
 });
+
+userSchema.methods.getPublicFields = function(){
+  return {
+    email: this.email,
+    username: this.username,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    pic: this.pic,
+    onBoarded: this.onBoarded
+  }
+}
 
 module.exports = mongoose.model('User', userSchema);
