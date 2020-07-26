@@ -13,7 +13,13 @@ exports.getUser = (req, res, next) => {
                 error.statusCode = 404;
                 throw error;
             }
-            res.status(200).json(user.getPublicFields());
+
+            const publicFields = user.getPublicFields();
+            
+            res.status(200).json({
+                uid: user._id, 
+                ...publicFields
+            });
         })
         .catch(err => {
             if (!err.statusCode) {
@@ -51,8 +57,14 @@ exports.updateUser = async (req, res, next) => {
         // save changes to db
         const result = await user.save();
 
+        // extract public fields
+        const publicFields = result.getPublicFields();
+
         // return response
-        res.status(200).json(result.getPublicFields());
+        res.status(200).json({
+            uid: result._id, 
+            ...publicFields
+        });
 
     } catch(err){
         if (!err.statusCode) err.statusCode = 500;
@@ -86,20 +98,3 @@ exports.updateUserPic = async (req, res, next) => {
         });
     }
 }
-
-// exports.completeOnBoarding = async (req, res, next) => {
-//     User.findById(req.uid)
-//         .then(user => {
-//             user.onBoarded = true;
-//             return user.save()
-//         })
-//         .then(result => {
-//             res.status(200).json({ onBoarded: result.onBoarded })
-//         })
-//         .catch(err => {
-//             if (!err.statusCode) {
-//                 err.statusCode = 500;
-//               }
-//               next(err);
-//         })
-// }

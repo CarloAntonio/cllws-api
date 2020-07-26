@@ -10,6 +10,7 @@ const { MongoEndPoint } = require('./keys/mongoKeys');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const profileRoutes = require('./routes/profile');
+const postRoutes = require('./routes/post');
 
 // initialize server
 const server = express();
@@ -31,10 +32,10 @@ server.use((req, res, next) => {
 server.use('/auth', authRoutes);
 server.use('/user', userRoutes);
 server.use('/profile', profileRoutes);
+server.use('/post', postRoutes);
 
 // error handler
 server.use((error, req, res, next) => {
-  console.log("Error has occured")
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
