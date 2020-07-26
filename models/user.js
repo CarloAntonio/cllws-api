@@ -39,6 +39,15 @@ const userSchema = new Schema({
 
 userSchema.methods.getPublicFields = function(){
   return {
+    username: this.username,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    pic: this.pic,
+  }
+}
+
+userSchema.methods.getPrivateFields = function(){
+  return {
     email: this.email,
     username: this.username,
     firstName: this.firstName,

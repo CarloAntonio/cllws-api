@@ -25,6 +25,7 @@ router.post(
     postController.addPost
 );
 router.get('/getPosts', isAuth, postController.getPosts);
+router.get('/getPosts/:username', isAuth, postController.getPostsPublic);
 
 // export router
 module.exports = router;

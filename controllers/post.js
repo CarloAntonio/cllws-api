@@ -3,6 +3,7 @@
 const { validationResult } = require('express-validator');
 
 // models
+const User = require('../models/user');
 const Post = require('../models/post');
 
 exports.addPost = async (req, res, next) => {
@@ -55,5 +56,33 @@ exports.getPosts = async (req, res, next) => {
         res.status(200).json(returnablePosts);
     } catch(err){
         return err
+    }
+}
+
+exports.getPostsPublic = async (req, res, next) => {
+    
+    try{
+        const user = await User.findOne({ username: req.params.username });
+
+        if (!user) {
+            const error = new Error('Could not find user.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const posts = await Post.find({ author: user._id })
+        if (!posts) {
+            const error = new Error('Could not find and posts.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const returnablePosts = posts.map(post => {
+            return post.getPublicFields();
+        })
+        res.status(200).json(returnablePosts);
+
+    } catch(err){
+        return err;
     }
 }

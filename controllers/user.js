@@ -1,6 +1,7 @@
 
 // models
 const User = require('../models/user');
+const Profile = require('../models/profile');
 
 // utils
 const uploadImg = require('../utils/fb');
@@ -14,12 +15,45 @@ exports.getUser = (req, res, next) => {
                 throw error;
             }
 
-            const publicFields = user.getPublicFields();
+            const publicFields = user.getPrivateFields();
             
             res.status(200).json({
                 uid: user._id, 
                 ...publicFields
             });
+        })
+        .catch(err => {
+            if (!err.statusCode) {
+                err.statusCode = 500;
+            }
+            next(err);
+        });    
+}
+
+exports.getUserPublic = (req, res, next) => {
+    let user = null;
+    User.findOne({ username: req.params.username })
+        .then(result => {
+            if (!result) {
+                const error = new Error('Could not find user.');
+                error.statusCode = 404;
+                throw error;
+            }
+
+            user = result;
+
+            return Profile.findOne({ user: result._id})
+        })
+        .then(profile => {
+            const profileFields = profile.getPublicFields();
+            const userFields = user.getPublicFields();
+            
+            const returnable = { ...userFields }
+            Object.keys(profileFields).forEach(field => {
+                if(!profileFields[field].hidden) returnable[field] = profileFields[field]
+            })
+            
+            res.status(200).json(returnable);
         })
         .catch(err => {
             if (!err.statusCode) {
@@ -58,7 +92,7 @@ exports.updateUser = async (req, res, next) => {
         const result = await user.save();
 
         // extract public fields
-        const publicFields = result.getPublicFields();
+        const publicFields = result.getPrivateFields();
 
         // return response
         res.status(200).json({
