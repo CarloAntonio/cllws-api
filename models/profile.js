@@ -94,6 +94,8 @@ const profileSchema = new Schema({
     },
 });
 
+// only use this function if you can't use
+// projections during queries
 profileSchema.methods.getPublicFields = function(){
   return {
     hometown: this.hometown,

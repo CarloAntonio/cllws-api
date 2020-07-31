@@ -40,7 +40,6 @@ exports.addPost = async (req, res, next) => {
             throw error;
         }
 
-        // return response
         res.status(200).json(result.getPublicFields());
     } catch(err){
         return err;
@@ -49,11 +48,16 @@ exports.addPost = async (req, res, next) => {
 
 exports.getPosts = async (req, res, next) => {
     try {
-        const posts = await Post.find({ 'author': req.uid });
-        const returnablePosts = posts.map(post => {
-            return post.getPublicFields();
-        })
-        res.status(200).json(returnablePosts);
+        const posts = await Post.find({ 'author': req.uid }, 'text date author -_id');
+
+        // handle no post found errors
+        if (!posts) {
+            const error = new Error('Could not find any posts.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json(posts);
     } catch(err){
         return err
     }
@@ -62,7 +66,9 @@ exports.getPosts = async (req, res, next) => {
 exports.getPostsPublic = async (req, res, next) => {
     
     try{
-        const user = await User.findOne({ username: req.params.username });
+        // projecting only username + id limits the amount of data 
+        // that need to be return => faster load times
+        const user = await User.findOne({ username: req.params.username }, 'username'); 
 
         if (!user) {
             const error = new Error('Could not find user.');
@@ -70,17 +76,14 @@ exports.getPostsPublic = async (req, res, next) => {
             throw error;
         }
 
-        const posts = await Post.find({ author: user._id })
+        const posts = await Post.find({ author: user._id }, 'text date author -_id')
         if (!posts) {
-            const error = new Error('Could not find and posts.');
+            const error = new Error('Could not find any posts.');
             error.statusCode = 404;
             throw error;
         }
 
-        const returnablePosts = posts.map(post => {
-            return post.getPublicFields();
-        })
-        res.status(200).json(returnablePosts);
+        res.status(200).json(posts);
 
     } catch(err){
         return err;

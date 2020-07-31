@@ -5,62 +5,55 @@ const Profile = require('../models/profile');
 
 // utils
 const uploadImg = require('../utils/fb');
+const { deepCopy } = require('../utils/helpers');
 
-exports.getUser = (req, res, next) => {
-    User.findById(req.uid)
-        .then(user => {
-            if (!user) {
-                const error = new Error('Could not find user.');
-                error.statusCode = 404;
-                throw error;
-            }
+exports.getUser = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.uid, 'username firstName lastName pic onBoarded friends sentRequest pendingRequest');
 
-            const publicFields = user.getPrivateFields();
-            
-            res.status(200).json({
-                uid: user._id, 
-                ...publicFields
-            });
-        })
-        .catch(err => {
-            if (!err.statusCode) {
-                err.statusCode = 500;
-            }
-            next(err);
-        });    
+        if (!user) {
+            const error = new Error('Could not find user.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json(user);
+    } catch(err){
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
 }
 
-exports.getUserPublic = (req, res, next) => {
-    let user = null;
-    User.findOne({ username: req.params.username })
-        .then(result => {
-            if (!result) {
-                const error = new Error('Could not find user.');
-                error.statusCode = 404;
-                throw error;
-            }
+exports.getUserPublic = async (req, res, next) => {
+    try {
+        const user = await User.findOne({ username: req.params.username }, 'username firstName lastName pic', { lean: true });
 
-            user = result;
+        if (!user) {
+            const error = new Error('Could not find user.');
+            error.statusCode = 404;
+            throw error;
+        }
 
-            return Profile.findOne({ user: result._id})
+        const profile = await Profile.findOne({ user: user._id}, 'hometown interest livesIn quote worksIn -_id', { lean: true });
+        
+        const returnable = deepCopy(user);
+        delete returnable._id;
+
+        Object.keys(profile).forEach(field => {
+            if(!profile[field].hidden) returnable[field] = profile[field]
         })
-        .then(profile => {
-            const profileFields = profile.getPublicFields();
-            const userFields = user.getPublicFields();
-            
-            const returnable = { ...userFields }
-            Object.keys(profileFields).forEach(field => {
-                if(!profileFields[field].hidden) returnable[field] = profileFields[field]
-            })
-            
-            res.status(200).json(returnable);
-        })
-        .catch(err => {
-            if (!err.statusCode) {
-                err.statusCode = 500;
-            }
-            next(err);
-        });    
+        
+        res.status(200).json(returnable);
+
+    } catch(err){
+        console.log(err)
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
 }
 
 exports.updateUser = async (req, res, next) => {

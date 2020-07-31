@@ -18,6 +18,10 @@ const postSchema = new Schema({
     },
 });
 
+// only use when query projection are not
+// available, query projects will always
+// be faster than returning all the data 
+// running this function to get public fields
 postSchema.methods.getPublicFields = function(){
   return {
     text: this.text,

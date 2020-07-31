@@ -1,6 +1,29 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const minUserSchema = new Schema({
+  uid: {
+    type: String,
+    required: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  firstName: {
+    type: String,
+    required: false
+  },
+  lastName: {
+    type: String,
+    required: false
+  },
+  pic: {
+    type: String,
+    required: false
+  },
+})
+
 const userSchema = new Schema({
   email: {
     type: String,
@@ -31,6 +54,9 @@ const userSchema = new Schema({
     require: true,
     default: false
   },
+  friends: [ String ],
+  sentRequest: [ minUserSchema ],
+  pendingRequest: [ minUserSchema ],
   profile: {
     type: Schema.Types.ObjectId,
     ref: 'Profile'
@@ -53,7 +79,8 @@ userSchema.methods.getPrivateFields = function(){
     firstName: this.firstName,
     lastName: this.lastName,
     pic: this.pic,
-    onBoarded: this.onBoarded
+    onBoarded: this.onBoarded,
+    friends: this.friends,
   }
 }
 

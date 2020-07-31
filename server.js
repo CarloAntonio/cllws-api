@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const profileRoutes = require('./routes/profile');
 const postRoutes = require('./routes/post');
+const friendRoutes = require('./routes/friend');
 
 // initialize server
 const server = express();
@@ -33,6 +34,7 @@ server.use('/auth', authRoutes);
 server.use('/user', userRoutes);
 server.use('/profile', profileRoutes);
 server.use('/post', postRoutes);
+server.use('/friend', friendRoutes);
 
 // error handler
 server.use((error, req, res, next) => {
@@ -44,6 +46,7 @@ server.use((error, req, res, next) => {
 
 // connect to mongoose
 mongoose.set('useUnifiedTopology', true);
+mongoose.set('useFindAndModify', false);
 mongoose
   .connect(MongoEndPoint, { useNewUrlParser: true })
   .then(result => {
