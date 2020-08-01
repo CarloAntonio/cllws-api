@@ -28,7 +28,7 @@ exports.getUser = async (req, res, next) => {
 
 exports.getUserPublic = async (req, res, next) => {
     try {
-        const user = await User.findOne({ username: req.params.username }, 'username firstName lastName pic', { lean: true });
+        const user = await User.findOne({ username: req.params.username }, 'username firstName lastName pic friends', { lean: true });
 
         if (!user) {
             const error = new Error('Could not find user.');
@@ -39,7 +39,6 @@ exports.getUserPublic = async (req, res, next) => {
         const profile = await Profile.findOne({ user: user._id}, 'hometown interest livesIn quote worksIn -_id', { lean: true });
         
         const returnable = deepCopy(user);
-        delete returnable._id;
 
         Object.keys(profile).forEach(field => {
             if(!profile[field].hidden) returnable[field] = profile[field]

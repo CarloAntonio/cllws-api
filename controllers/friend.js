@@ -10,59 +10,135 @@ exports.getFriends = async (req, res, next) => {
     }
 }
 
+exports.getFriendsPublic = async (req, res, next) => {
+    try {
+        const friends = await User.find({ friends: req.params.id }, 'firstName lastName pic username');
+        res.status(200).json(friends);
+    } catch(err) {
+        return err;
+    }
+}
+
 exports.addRequest = async (req, res, next) => {
-    const requestorId = req.uid;
-    const requesteeUsername = req.body.username;
+    const userId = req.uid;
+    const friendId = req.body.friendId;
 
-    let requestor = null;
     try{
-        requestor = await User.findById(requestorId);
-        if (!requestor) {
+        // get "minified" version of users
+        const userMin = await User.findById(userId, 'username firstName lastName pic');
+        if (!userMin) {
             const error = new Error('Could not find user.');
             error.statusCode = 404;
             throw error;
         }
 
-        requestee = await User.findOne({ username: requesteeUsername});
-        if (!requestee) {
+        const friendMin = await User.findById(friendId, 'username firstName lastName pic');
+        if (!friendMin) {
             const error = new Error('Could not find user.');
             error.statusCode = 404;
             throw error;
         }
 
-        const minRequestor = {
-            uid: requestor._id.toString(),
-            username: requestor.username,
-            firstName: requestor.firstName,
-            lastName: requestor.lastName,
-            pic: requestor.pic
+        // set options
+        const options = {
+            new: true,
+            fields: {
+                sentRequest: 1,
+                pendingRequest: 1
+            }
         }
 
-        const minRequestee = {
-            uid: requestee._id.toString(),
-            username: requestee.username,
-            firstName: requestee.firstName,
-            lastName: requestee.lastName,
-            pic: requestee.pic
+        // update user with new friend request
+        const userUpdate = {
+            $addToSet: { sentRequest: friendMin }
         }
 
-        requestor.sentRequest.push(minRequestee)
-        const result1 = await requestor.save();
-        if (!result1) {
-            const error = new Error('Error sending friend request.');
+        const user = await User.findByIdAndUpdate(userId, userUpdate, options);
+        if (!user) {
+            const error = new Error('Could not find user.');
             error.statusCode = 404;
             throw error;
         }
 
-        requestee.pendingRequest.push(minRequestor);
-        const result2 = await requestee.save();
-        if (!result2) {
-            const error = new Error('Error sending friend request.');
+        // update friend with new friend request
+        const friendUpdate = {
+            $addToSet: { pendingRequest: userMin }
+        }
+
+        const friend = await User.findByIdAndUpdate(friendId, friendUpdate, options);
+        if (!friend) {
+            const error = new Error('Could not find user.');
             error.statusCode = 404;
             throw error;
         }
 
-        res.status(200).json({ok: true});
+        res.status(200).json(user);
+    } catch(err){
+        console.log(err);
+        return err;
+    }
+}
+
+exports.friendRequestOutcome = async (req, res, next) => {
+    const userId = req.uid;
+    const friendId = req.body.friendId;
+    const outcome = req.body.outcome
+
+    try{
+        let userUpdate = {
+            $pull: {
+                pendingRequest: { _id: friendId}
+            }
+        }
+
+        if(outcome === 'add') {
+            userUpdate = {
+                $pull: {
+                    pendingRequest: { _id: friendId}
+                },
+                $addToSet: { friends: friendId }
+            }
+        }
+    
+        const userOptions = {
+            new: true,
+            fields: {
+                friends: 1,
+                sentRequest: 1,
+                pendingRequest: 1
+            }
+        }
+
+        const user = await User.findByIdAndUpdate(userId, userUpdate, userOptions);
+        if (!user) {
+            const error = new Error('Could not find user.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        let friendUpdate = {
+            $pull: {
+                sentRequest: { _id: user._id}
+            }
+        }
+
+        if(outcome === 'add') {
+            friendUpdate = {
+                $pull: {
+                    pendingRequest: { _id: friendId}
+                },
+                $addToSet: { friends: userId }
+            }
+        }
+
+        const friend = await User.findByIdAndUpdate(friendId, friendUpdate);
+        if (!friend) {
+            const error = new Error('Could not find user.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json(user);
     } catch(err){
         console.log(err);
         return err;
