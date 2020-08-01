@@ -16,7 +16,6 @@ router.get('/getFriends', isAuth, friendController.getFriends);
 router.get('/getFriends/:id', isAuth, friendController.getFriendsPublic);
 router.patch('/addRequest', isAuth, friendController.addRequest);
 router.patch('/friendRequestOutcome', isAuth, friendController.friendRequestOutcome);
-// router.get('/getFriends/:uid', isAuth, friendController.)
 
 // export router
 module.exports = router;

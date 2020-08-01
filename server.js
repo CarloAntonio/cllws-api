@@ -12,6 +12,7 @@ const userRoutes = require('./routes/user');
 const profileRoutes = require('./routes/profile');
 const postRoutes = require('./routes/post');
 const friendRoutes = require('./routes/friend');
+const feedRoutes = require('./routes/feed');
 
 // initialize server
 const server = express();
@@ -35,6 +36,7 @@ server.use('/user', userRoutes);
 server.use('/profile', profileRoutes);
 server.use('/post', postRoutes);
 server.use('/friend', friendRoutes);
+server.use('/feed', feedRoutes);
 
 // error handler
 server.use((error, req, res, next) => {
