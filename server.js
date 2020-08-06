@@ -14,6 +14,9 @@ const postRoutes = require('./routes/post');
 const friendRoutes = require('./routes/friend');
 const feedRoutes = require('./routes/feed');
 
+// constants 
+const environment = process.env.NODE_ENV || 'development';
+
 // initialize server
 const server = express();
 
@@ -49,8 +52,13 @@ server.use((error, req, res, next) => {
 // connect to mongoose
 mongoose.set('useUnifiedTopology', true);
 mongoose.set('useFindAndModify', false);
+
+// sent endpoint based on environment
+let endpoint = 'mongodb://localhost:27017/cllwslocal';
+if(environment !== "development") endpoint = MongoEndPoint;
+
 mongoose
-  .connect(MongoEndPoint, { useNewUrlParser: true })
+  .connect(endpoint, { useNewUrlParser: true })
   .then(result => {
     server.listen(8080);
   })
